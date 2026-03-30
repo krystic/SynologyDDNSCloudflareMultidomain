@@ -15,11 +15,12 @@ class TestableSynologyCloudflareDDNSAgent extends SynologyCloudflareDDNSAgent
         $this->exitMsg = $msg;
         throw new ExitException("Exit called with message: $msg");
     }
-    
+
     public function callPrivateMethod($methodName, $args = [])
     {
         $reflection = new ReflectionClass($this);
         $method = $reflection->getMethod($methodName);
+        $method->setAccessible(true);
         return $method->invokeArgs($this, $args);
     }
 }
@@ -30,13 +31,27 @@ class SynologyCloudflareDDNSAgentTest extends TestCase
     {
         $mockApi = $this->createMock(CloudflareAPI::class);
         $mockIpify = $this->createMock(Ipify::class);
-        
+
         $mockApi->method('verifyToken')->willReturn(['success' => true]);
-        
-        $mockApi->method('getZones')->willReturn(['result' => []]);
+
+        $mockApi->method('getZoneByName')
+            ->willReturnCallback(function ($zoneName) {
+                if ($zoneName === 'example.com') {
+                    return [
+                        'result' => [
+                            [
+                                'id' => 'test-zone-id',
+                                'name' => 'example.com',
+                            ]
+                        ]
+                    ];
+                }
+
+                return ['result' => []];
+            });
 
         $agent = new TestableSynologyCloudflareDDNSAgent('apikey', 'example.com', '1.2.3.4', $mockApi, $mockIpify);
-        
+
         $this->assertTrue($agent->callPrivateMethod('isValidHostname', ['example.com']));
         $this->assertTrue($agent->callPrivateMethod('isValidHostname', ['sub.example.com']));
         $this->assertFalse($agent->callPrivateMethod('isValidHostname', ['-example.com']));
@@ -47,22 +62,38 @@ class SynologyCloudflareDDNSAgentTest extends TestCase
     {
         $mockApi = $this->createMock(CloudflareAPI::class);
         $mockIpify = $this->createMock(Ipify::class);
+
         $mockApi->method('verifyToken')->willReturn(['success' => true]);
-        $mockApi->method('getZones')->willReturn(['result' => []]);
+
+        $mockApi->method('getZoneByName')
+            ->willReturnCallback(function ($zoneName) {
+                if ($zoneName === 'example.com') {
+                    return [
+                        'result' => [
+                            [
+                                'id' => 'test-zone-id',
+                                'name' => 'example.com',
+                            ]
+                        ]
+                    ];
+                }
+
+                return ['result' => []];
+            });
 
         $agent = new TestableSynologyCloudflareDDNSAgent('apikey', 'example.com', '1.2.3.4', $mockApi, $mockIpify);
 
         $input = "example.com|sub.example.com|invalid-";
         $expected = ['example.com', 'sub.example.com'];
-        
+
         $this->assertEquals($expected, $agent->callPrivateMethod('extractHostnames', [$input]));
     }
-    
+
     public function testConstructorAuthFailure()
     {
         $mockApi = $this->createMock(CloudflareAPI::class);
         $mockIpify = $this->createMock(Ipify::class);
-        
+
         $mockApi->method('verifyToken')->willReturn(['success' => false]);
 
         $this->expectException(ExitException::class);
