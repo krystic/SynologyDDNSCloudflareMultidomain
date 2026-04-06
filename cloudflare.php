@@ -131,6 +131,14 @@ class CloudflareAPI
         return $this->call("GET", "client/v4/zones?per_page=" . self::ZONES_PER_PAGE . "&status=active");
     }
 
+    public function getZoneByName($zoneName)
+{
+    return $this->call(
+        "GET",
+        "client/v4/zones?name=" . rawurlencode($zoneName) . "&status=active"
+    );
+}
+
     /**
      * @link https://developers.cloudflare.com/api/operations/dns-records-for-a-zone-list-dns-records
      * @throws Exception
@@ -341,42 +349,64 @@ class SynologyCloudflareDDNSAgent
     private function matchHostnameWithZone($hostnameList = [])
     {
         try {
-            $zoneList = $this->cloudflareAPI->getZones();
-            $zoneList = $zoneList['result'];
-            foreach ($zoneList as $zone) {
-                $zoneId = $zone['id'];
-                $zoneName = $zone['name'];
-                foreach ($hostnameList as $hostname) {
-                    // Check if the hostname ends with the zone name
-                    if ($hostname === $zoneName || substr($hostname, -strlen('.' . $zoneName)) === '.' . $zoneName) {
-                        // Add an IPv4 DNS record for each hostname that matches a zone
-                        $this->dnsRecordList[] = new DnsRecordEntity(
-                            '',
-                            'A',
-                            $hostname,
-                            $this->ipv4,
-                            $zoneId,
-                            '',
-                            ''
-                        );
-                        if (isset($this->ipv6)) {
-                            // Add an IPv6 DNS record if an IPv6 address is available
-                            $this->dnsRecordList[] = new DnsRecordEntity(
-                                '',
-                                'AAAA',
-                                $hostname,
-                                $this->ipv6,
-                                $zoneId,
-                                '',
-                                ''
-                            );
-                        }
-                    }
+            foreach ($hostnameList as $hostname) {
+                $zoneId = $this->findZoneIdByHostname($hostname);
+
+                if (!$zoneId) {
+                    continue;
                 }
+
+                $this->dnsRecordList[] = new DnsRecordEntity(
+                    '',
+                    'A',
+                    $hostname,
+                    $this->ipv4,
+                    $zoneId,
+                    '',
+                    ''
+                );
+
+                if (isset($this->ipv6)) {
+                    $this->dnsRecordList[] = new DnsRecordEntity(
+                        '',
+                        'AAAA',
+                        $hostname,
+                        $this->ipv6,
+                        $zoneId,
+                        '',
+                        ''
+                    );
+                }
+            }
+
+            if (empty($this->dnsRecordList)) {
+                $this->exitWithSynologyMsg(SynologyOutput::NO_HOSTNAME);
             }
         } catch (Exception $e) {
             $this->exitWithSynologyMsg(SynologyOutput::NO_HOSTNAME);
         }
+    }
+
+    /**
+     * Summary of findZoneIdByHostname
+     * @param mixed $hostname
+     */
+    private function findZoneIdByHostname($hostname)
+    {
+        $hostname = strtolower(rtrim(trim($hostname), '.'));
+        $labels = explode('.', $hostname);
+        $count = count($labels);
+
+        for ($i = 0; $i <= $count - 2; $i++) {
+            $candidateZone = implode('.', array_slice($labels, $i));
+            $zone = $this->cloudflareAPI->getZoneByName($candidateZone);
+
+            if (!empty($zone['result']) && !empty($zone['result'][0]['id'])) {
+                return $zone['result'][0]['id'];
+            }
+        }
+
+        return null;
     }
 
     /**
