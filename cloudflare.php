@@ -161,6 +161,8 @@ class CloudflareAPI
 class Ipify
 {
     const API_URL = 'https://api6.ipify.org';
+    const API_URL_CN = 'https://test.ipw.cn/api/ip/myip';
+
     /**
      * Return if external IPv6 address is available
      * @link https://www.ipify.org
@@ -169,7 +171,7 @@ class Ipify
     public function tryGetIpv6()
     {
         $options = [
-            CURLOPT_URL => self::API_URL . "/?format=json",
+            CURLOPT_URL => self::API_URL_CN . "/?format=json",
             CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER => false,
@@ -181,7 +183,7 @@ class Ipify
 
         $req = curl_init();
         curl_setopt_array($req, $options);
-        $res = curl_exec($req);
+        $res = strtolower(curl_exec($req));
 
         if (curl_errno($req)) {
             throw new Exception('Curl error: ' . curl_error($req));
