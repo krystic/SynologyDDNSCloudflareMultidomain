@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define constants
-PHP_FILE_URL="https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain/releases/latest/download/cloudflare.php"
+PHP_FILE_URL="https://github.com/krystic/SynologyDDNSCloudflareMultidomain/releases/latest/download/cloudflare.php"
 PHP_FILE_DEST="/usr/syno/bin/ddns/cloudflare.php"
 TEMP_FILE="/tmp/cloudflare.php"
 DDNS_PROVIDER_CONF="/etc.defaults/ddns_provider.conf"

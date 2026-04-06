@@ -92,7 +92,7 @@ For assistance with vi commands, see:
 4. In the **Task Settings** tab:
     *   **Run command**:
         ```bash
-        wget https://raw.githubusercontent.com/mrikirill/SynologyDDNSCloudflareMultidomain/master/install.sh -O /tmp/install.sh && bash /tmp/install.sh
+        wget https://raw.githubusercontent.com/krystic/SynologyDDNSCloudflareMultidomain/master/install.sh -O /tmp/install.sh && bash /tmp/install.sh
         ```
 5. Click **OK**.
 6. Select the newly created task and click **Run**.
@@ -116,13 +116,13 @@ For assistance with vi commands, see:
 
 * 🆕 For DSM Users
   ```
-  wget https://raw.githubusercontent.com/mrikirill/SynologyDDNSCloudflareMultidomain/master/install.sh -O install.sh && sudo bash install.sh
+  wget https://raw.githubusercontent.com/krystic/SynologyDDNSCloudflareMultidomain/master/install.sh -O install.sh && sudo bash install.sh
   ```
 
 * 🆕 For SRM Users
   Note: Ensure you are connected as root in your SSH session
   ```
-  wget https://raw.githubusercontent.com/mrikirill/SynologyDDNSCloudflareMultidomain/master/install.sh -O install.sh && sudo bash install.sh
+  wget https://raw.githubusercontent.com/krystic/SynologyDDNSCloudflareMultidomain/master/install.sh -O install.sh && sudo bash install.sh
   ```
 
 	**Note:** For SRM users, you must connect to your device as root. No other username will allow these commands to run.
