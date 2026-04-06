@@ -58,7 +58,7 @@ Before starting the installation process, make sure you have (and know) the foll
  
 	Ensure the DNS A record(s) for the domain/zone(s) you wish to update with this script have been created (More information: [Managing DNS records](https://support.cloudflare.com/hc/en-us/articles/360019093151-Managing-DNS-records-in-Cloudflare)).
 
-	Case for if IPv6 is available (check via https://api6.ipify.org), you can create an AAAA record for the domain/zone(s) you wish to update with this script.
+	Case for if IPv6 is available (check via https://test.ipw.cn/api/ip/myip), you can create an AAAA record for the domain/zone(s) you wish to update with this script. This IPv6 detection service is accessible from China.
 
 	Your DNS records should appear (or already be setup as follows) in Cloudflare:
 	
