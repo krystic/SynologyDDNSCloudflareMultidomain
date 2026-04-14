@@ -160,8 +160,8 @@ class CloudflareAPI
 
 class Ipify
 {
-    const API_URL = 'https://api6.ipify.org';
-    const API_URL_CN = 'https://test.ipw.cn/api/ip/myip';
+    const API_URL = 'https://api6.ipify.org/?format=json';
+    const API_URL_CN = 'https://v6.ip.zxinc.org/info.php?type=json';
 
     /**
      * Return if external IPv6 address is available
@@ -171,7 +171,7 @@ class Ipify
     public function tryGetIpv6()
     {
         $options = [
-            CURLOPT_URL => self::API_URL_CN . "/?format=json",
+            CURLOPT_URL => self::API_URL_CN,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER => false,
@@ -192,11 +192,14 @@ class Ipify
         curl_close($req);
         $json = json_decode($res, true);
 
-        if (!$json['ip']) {
+        // Compatible with both 'ip' (ipify) and 'myip' (zxinc) response formats
+        $ip = $json['ip'] ?? $json['myip'] ?? null;
+
+        if (!$ip) {
             throw new Exception('API call failed: ' . json_encode($json));
         }
 
-        return $json['ip'];
+        return $ip;
     }
 }
 
