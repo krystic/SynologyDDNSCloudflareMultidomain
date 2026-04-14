@@ -290,6 +290,6 @@ class SynologyCloudflareDDNSAgentTest extends TestCase
         $this->assertEquals('https://api6.ipify.org/?format=json', IPv6Resolver::API_URL);
         $this->assertEquals('https://v6.ip.zxinc.org/info.php?type=json', IPv6Resolver::API_URL_CN);
         $this->assertEquals('ip', IPv6Resolver::FIELD_DEFAULT);
-        $this->assertEquals('myip', IPv6Resolver::FIELD_CN);
+        $this->assertEquals('datmyip', IPv6Resolver::FIELD_CN);
     }
 }
