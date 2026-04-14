@@ -13,16 +13,22 @@
 
 ## Table of contents
 
-* [Features](#features)
-* [Before you begin](#before-you-begin)
-* [How to install](#how-to-install)
-* [Troubleshooting and known issues](#troubleshooting-and-known-issues)
-  + [CloudFlare API free domains limitation](#cloudflare-api-free-domains-limitation)
-  + [Connection test failed or error returned](#connection-test-failed-or-error-returned)
-  + [Cloudflare no longer listed as a DDNS provider after a DSM update](#cloudflare-no-longer-listed-as-a-ddns-provider-after-dsm-or-srm-updates)
-* [Default Cloudflare ports](#default-cloudflare-ports)
-* [Debug script](#debug)
-* [Credits](#credits)
+- [Synology Dynamic DNS with Cloudflare for both multidomains and subdomains](#synology-dynamic-dns-with-cloudflare-for-both-multidomains-and-subdomains)
+  - [Changes from upstream](#changes-from-upstream)
+  - [Table of contents](#table-of-contents)
+  - [Features](#features)
+  - [Before you begin](#before-you-begin)
+  - [How to install](#how-to-install)
+    - [Method 1: via Task Scheduler (Recommended - No SSH required)](#method-1-via-task-scheduler-recommended---no-ssh-required)
+    - [Method 2: via SSH](#method-2-via-ssh)
+    - [Configure DDNS (Required for both methods)](#configure-ddns-required-for-both-methods)
+  - [Troubleshooting and known issues](#troubleshooting-and-known-issues)
+    - [Cloudflare API free domains limitation](#cloudflare-api-free-domains-limitation)
+    - [Connection test failed or error returned](#connection-test-failed-or-error-returned)
+    - [Cloudflare no longer listed as a DDNS provider after DSM or SRM updates](#cloudflare-no-longer-listed-as-a-ddns-provider-after-dsm-or-srm-updates)
+  - [Default Cloudflare ports](#default-cloudflare-ports)
+  - [Debug](#debug)
+  - [Credits](#credits)
 
 ## Features
 
@@ -165,7 +171,7 @@ For multiple domains with options: __subdomain.mydomain.com|vpn.mydomain.com,v4|
 	- `nas.example.com` - Update A + AAAA, IPv6 via ipify
 	- `nas.example.com|cn` - Update A + AAAA, IPv6 via China API
 	- `nas.example.com,v4|vpn.example.com,v6|cn` - nas: A only, vpn: AAAA only (China API)
-	- `nas.example.com|https://v6.ip.zxinc.org/info.php?type=json,myip` - Custom IPv6 API
+	- `nas.example.com|https://v6.ip.zxinc.org/info.php?type=json,data.myip` - Custom IPv6 API
     
         __Note: there is a 256-character limit on Hostname input__
 	* Password: Your created Cloudflare API Key
