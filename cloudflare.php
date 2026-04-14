@@ -163,7 +163,7 @@ class IPv6Resolver
     const API_URL = 'https://api6.ipify.org/?format=json';
     const API_URL_CN = 'https://v6.ip.zxinc.org/info.php?type=json';
     const FIELD_DEFAULT = 'ip';
-    const FIELD_CN = 'myip';
+    const FIELD_CN = 'data.myip';
 
     /**
      * Get external IPv6 address from specified or default API
@@ -208,10 +208,24 @@ class IPv6Resolver
 
         // Determine field name
         if ($fieldName) {
-            $ip = $json[$fieldName] ?? null;
+            if (strpos($fieldName, '.') !== false) {
+                // 支持 data.myip 形式
+                $parts = explode('.', $fieldName);
+                $ip = $json;
+                foreach ($parts as $part) {
+                    if (is_array($ip) && array_key_exists($part, $ip)) {
+                        $ip = $ip[$part];
+                    } else {
+                        $ip = null;
+                        break;
+                    }
+                }
+            } else {
+                $ip = $json[$fieldName] ?? null;
+            }
         } else {
             // Auto-detect: try 'ip' first, then 'myip'
-            $ip = $json['ip'] ?? $json['myip'] ?? null;
+            $ip = $json['ip'] ?? $json['myip'] ?? $json['data']['myip'] ?? null;
         }
 
         if (!$ip) {
