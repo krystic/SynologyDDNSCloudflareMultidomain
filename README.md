@@ -1,13 +1,15 @@
 
 # Synology Dynamic DNS with Cloudflare for both multidomains and subdomains
 
-[![PHP Unit Tests](https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain/actions/workflows/php-test.yml/badge.svg?branch=master)](https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain/actions/workflows/php-test.yml)
+> Forked from [mrikirill/SynologyDDNSCloudflareMultidomain](https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain)
 
-> Documentation website: https://mrikirill.github.io/SynologyDDNSCloudflareMultidomain/
-> 
-> [![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-brightgreen)](https://github.com/sponsors/mrikirill)
->
-> 📢 **Check out the new native version of this agent, written in Kotlin -> [KTSynologyDDNSCloudflareMultidomain](https://github.com/mrikirill/KTSynologyDDNSCloudflareMultidomain)** 
+[![PHP Unit Tests](https://github.com/krystic/SynologyDDNSCloudflareMultidomain/actions/workflows/php-test.yml/badge.svg?branch=master)](https://github.com/krystic/SynologyDDNSCloudflareMultidomain/actions/workflows/php-test.yml)
+
+## Changes from upstream
+
+- **IPv6 API support for China**: Added `|cn` option to use China-accessible IPv6 detection API
+- **Custom IPv6 API**: Support custom IPv6 API with format `|https://api.example.com/ip,fieldname`
+- **Per-domain record type control**: Use `,v4` or `,v6` suffix to control which records to update 
 
 ## Table of contents
 
@@ -20,7 +22,7 @@
   + [Cloudflare no longer listed as a DDNS provider after a DSM update](#cloudflare-no-longer-listed-as-a-ddns-provider-after-dsm-or-srm-updates)
 * [Default Cloudflare ports](#default-cloudflare-ports)
 * [Debug script](#debug)
-* [Support this project](#support-this-project)
+* [Credits](#credits)
 
 ## Features
 
@@ -41,7 +43,7 @@ Before starting the installation process, make sure you have (and know) the foll
 	 
 	 b. Have your [API key](https://dash.cloudflare.com/profile/api-tokens) - no need to use your Global API key! (More info: [API keys](https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys)).
 
-	![image](https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain/blob/master/docs/example4.png)
+	![image](https://github.com/krystic/SynologyDDNSCloudflareMultidomain/blob/master/docs/example4.png)
 
 
 	 c. Create a API key with following (3) permissions:
@@ -64,7 +66,7 @@ Before starting the installation process, make sure you have (and know) the foll
 	
 	(Note: Having Proxied turned on for your A records isn't necessary, but it will prevent those snooping around from easily finding out your current IP address)
 
-	![image](https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain/blob/master/docs/example1.png)
+	![image](https://github.com/krystic/SynologyDDNSCloudflareMultidomain/blob/master/docs/example1.png)
 	
 3. *SSH access to your Synology device:*
 
@@ -110,7 +112,7 @@ For assistance with vi commands, see:
 	 
 	 Navigate to __Control Panel > Services > System Services > Terminal > Enable SSH service__
 	 
-	![image](https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain/blob/master/docs/example2.png)
+	![image](https://github.com/krystic/SynologyDDNSCloudflareMultidomain/blob/master/docs/example2.png)
 
 2. **Connect via SSH:** Connect to your supported device via SSH and execute command
 
@@ -142,17 +144,37 @@ For assistance with vi commands, see:
     * 🆕Hostname: this field is not used anymore, you can put any value here
 	* Username:
 For a single domain: __mydomain.com__
-For multiple domains: __subdomain.mydomain.com|vpn.mydomain.com__
+For multiple domains with options: __subdomain.mydomain.com|vpn.mydomain.com,v4|test.mydomain.com,v6|cn__
 	  🆕(ensure each domain is separated: `|`)🆕
+
+	**Domain Options:**
+	| Option | Description |
+	|--------|-------------|
+	| (none) | Update both A (IPv4) and AAAA (IPv6) |
+	| `,v4` | Update A record only (IPv4) |
+	| `,v6` | Update AAAA record only (IPv6) |
+
+	**IPv6 API Options (at end):**
+	| Option | Description |
+	|--------|-------------|
+	| (none) | Use ipify.org for IPv6 detection |
+	| `\|cn` | Use China-accessible API for IPv6 detection |
+	| `\|https://api.example.com/ip,fieldname` | Use custom API, `fieldname` is the JSON key containing IPv6 |
+
+	**Examples:**
+	- `nas.example.com` - Update A + AAAA, IPv6 via ipify
+	- `nas.example.com|cn` - Update A + AAAA, IPv6 via China API
+	- `nas.example.com,v4|vpn.example.com,v6|cn` - nas: A only, vpn: AAAA only (China API)
+	- `nas.example.com|https://v6.ip.zxinc.org/info.php?type=json,myip` - Custom IPv6 API
     
         __Note: there is a 256-character limit on Hostname input__
 	* Password: Your created Cloudflare API Key
 
-	![image](https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain/blob/master/docs/example3.png)
+	![image](https://github.com/krystic/SynologyDDNSCloudflareMultidomain/blob/master/docs/example3.png)
 
 	Finally, press the test connection button to confirm all information is correctly entered, before pressing Ok to save and confirm your details.
 
-4. You're done! Optional, if you're happy with this script you could buy me ☕ or 🍺 here -> [![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-brightgreen)](https://github.com/sponsors/mrikirill)
+4. You're done!
 
 ## Troubleshooting and known issues
 
@@ -219,15 +241,20 @@ You can run this script directly to see output logs
 * Run this command: 
 
 ```
+# Basic usage
 /usr/bin/php -d open_basedir=/usr/syno/bin/ddns -f /usr/syno/bin/ddns/cloudflare.php "domain1.com|vpn.domain2.com" "your-Cloudflare-token" "" "your-ip-address"
+
+# With China IPv6 API
+/usr/bin/php -d open_basedir=/usr/syno/bin/ddns -f /usr/syno/bin/ddns/cloudflare.php "domain1.com|cn" "your-Cloudflare-token" "" "your-ip-address"
+
+# With per-domain options
+/usr/bin/php -d open_basedir=/usr/syno/bin/ddns -f /usr/syno/bin/ddns/cloudflare.php "domain1.com,v4|domain2.com,v6|cn" "your-Cloudflare-token" "" "your-ip-address"
 ```
 
 * Check output logs
 
 ## Credits
 
+Original project by [mrikirill](https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain) - consider sponsoring the original author!
+
 [MKDoc - generate documentation](https://www.mkdocs.org)
-
-## Support this project
-
-If you find this project helpful, please support it here [![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-brightgreen)](https://github.com/sponsors/mrikirill)

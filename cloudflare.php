@@ -158,20 +158,25 @@ class CloudflareAPI
     }
 }
 
-class Ipify
+class IPv6Resolver
 {
     const API_URL = 'https://api6.ipify.org/?format=json';
     const API_URL_CN = 'https://v6.ip.zxinc.org/info.php?type=json';
+    const FIELD_DEFAULT = 'ip';
+    const FIELD_CN = 'myip';
 
     /**
-     * Return if external IPv6 address is available
-     * @link https://www.ipify.org
+     * Get external IPv6 address from specified or default API
+     * @param string|null $customUrl Custom API URL (null = use default ipify)
+     * @param string|null $fieldName JSON field name for IP (null = auto-detect)
      * @throws Exception
      */
-    public function tryGetIpv6()
+    public function tryGetIpv6($customUrl = null, $fieldName = null)
     {
+        $url = $customUrl ?: self::API_URL;
+        
         $options = [
-            CURLOPT_URL => self::API_URL_CN,
+            CURLOPT_URL => $url,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER => false,
@@ -183,20 +188,31 @@ class Ipify
 
         $req = curl_init();
         curl_setopt_array($req, $options);
-        $res = strtolower(curl_exec($req));
+        $res = curl_exec($req);
 
         if (curl_errno($req)) {
-            throw new Exception('Curl error: ' . curl_error($req));
+            $error = curl_error($req);
+            curl_close($req);
+            throw new Exception("IPv6 API connection failed ($url): $error");
         }
 
         curl_close($req);
         $json = json_decode($res, true);
 
-        // Compatible with both 'ip' (ipify) and 'myip' (zxinc) response formats
-        $ip = $json['ip'] ?? $json['myip'] ?? null;
+        if ($json === null) {
+            throw new Exception("IPv6 API returned invalid JSON ($url): $res");
+        }
+
+        // Determine field name
+        if ($fieldName) {
+            $ip = $json[$fieldName] ?? null;
+        } else {
+            // Auto-detect: try 'ip' first, then 'myip'
+            $ip = $json['ip'] ?? $json['myip'] ?? null;
+        }
 
         if (!$ip) {
-            throw new Exception('API call failed: ' . json_encode($json));
+            throw new Exception("IPv6 API response missing IP field ($url): " . json_encode($json));
         }
 
         return $ip;
@@ -242,23 +258,36 @@ class DnsRecordEntity
 /**
  * DDNS auto update agent for Synology DSM
  * Supports multidomains and subdomains
+ * 
+ * Hostname format: domain1.com|domain2.com,v4|domain3.com,v6|cn
+ * Options:
+ *   (none) - Update both A (IPv4) and AAAA (IPv6)
+ *   ,v4    - Update A record only (IPv4)
+ *   ,v6    - Update AAAA record only (IPv6)
+ *   |cn    - (at end) Use China API for IPv6 detection
+ *   |https://custom.api/path,fieldname - (at end) Use custom API, fieldname is the JSON key for IPv6
  */
 class SynologyCloudflareDDNSAgent
 {
-    private $ipv4, $ipv6, $dnsRecordList = [];
+    private $ipv4, $ipv6, $ipv6Error, $dnsRecordList = [];
     private $cloudflareAPI;
-    private $ipify;
+    private $ipv6Resolver;
 
-    function __construct($apiKey, $hostname, $ipv4, $cloudflareAPI = null, $ipify = null)
+    function __construct($apiKey, $hostname, $ipv4, $cloudflareAPI = null, $ipv6Resolver = null)
     {
         $this->cloudflareAPI = $cloudflareAPI ?: new CloudflareAPI($apiKey);
-        $this->ipify = $ipify ?: new Ipify();
+        $this->ipv6Resolver = $ipv6Resolver ?: new IPv6Resolver();
         $this->ipv4 = $ipv4;
 
+        // Parse IPv6 configuration from hostname
+        $ipv6Config = $this->parseIPv6Config($hostname);
+
+        // Get IPv6 address based on configuration
         try {
-            $this->ipv6 = $this->ipify->tryGetIpv6();
+            $this->ipv6 = $this->ipv6Resolver->tryGetIpv6($ipv6Config['url'], $ipv6Config['field']);
         } catch (Exception $e) {
-            // IPv6 not available
+            $this->ipv6Error = $e->getMessage();
+            // IPv6 not available, will be handled later if needed
         }
 
         try {
@@ -275,6 +304,48 @@ class SynologyCloudflareDDNSAgent
         }
 
         $this->matchHostnameWithZone($hostnameList);
+    }
+
+    /**
+     * Parse IPv6 API configuration from hostname string
+     * 
+     * Formats:
+     *   domain.com           -> use default API (ipify)
+     *   domain.com|cn        -> use China API
+     *   domain.com|https://api.example.com/ip,fieldname -> use custom API
+     * 
+     * @param string $hostname
+     * @return array ['url' => string|null, 'field' => string|null]
+     */
+    private function parseIPv6Config($hostname)
+    {
+        $parts = preg_split('/\|/', $hostname, -1, PREG_SPLIT_NO_EMPTY);
+        
+        if (empty($parts)) {
+            return ['url' => null, 'field' => null]; // Default API
+        }
+        
+        $lastPart = trim(end($parts));
+        $lastPartLower = strtolower($lastPart);
+        
+        // Check for 'cn' keyword
+        if ($lastPartLower === 'cn') {
+            return [
+                'url' => IPv6Resolver::API_URL_CN,
+                'field' => IPv6Resolver::FIELD_CN
+            ];
+        }
+        
+        // Check for custom URL format: https://...,fieldname
+        if (preg_match('/^(https?:\/\/.+),([a-zA-Z_][a-zA-Z0-9_]*)$/', $lastPart, $matches)) {
+            return [
+                'url' => $matches[1],
+                'field' => $matches[2]
+            ];
+        }
+        
+        // Default API
+        return ['url' => null, 'field' => null];
     }
 
     /**
@@ -347,40 +418,53 @@ class SynologyCloudflareDDNSAgent
      * iterates over each hostname provided, and stores corresponding DNS records
      * in the dnsRecordList property if a match is found.
      *
-     * @param array $hostnameList List of hostnames to be matched with zones.
+     * @param array $hostnameList List of hostname entries with options.
      * @throws Exception If an error occurs during the API call,
      * it outputs an appropriate Synology message and exits the script.
      */
     private function matchHostnameWithZone($hostnameList = [])
     {
         try {
-            foreach ($hostnameList as $hostname) {
+            foreach ($hostnameList as $entry) {
+                $hostname = $entry['hostname'];
+                $updateV4 = $entry['updateV4'];
+                $updateV6 = $entry['updateV6'];
+
                 $zoneId = $this->findZoneIdByHostname($hostname);
 
                 if (!$zoneId) {
                     continue;
                 }
 
-                $this->dnsRecordList[] = new DnsRecordEntity(
-                    '',
-                    'A',
-                    $hostname,
-                    $this->ipv4,
-                    $zoneId,
-                    '',
-                    ''
-                );
-
-                if (isset($this->ipv6)) {
+                // Add A record (IPv4)
+                if ($updateV4 && isset($this->ipv4)) {
                     $this->dnsRecordList[] = new DnsRecordEntity(
                         '',
-                        'AAAA',
+                        'A',
                         $hostname,
-                        $this->ipv6,
+                        $this->ipv4,
                         $zoneId,
                         '',
                         ''
                     );
+                }
+
+                // Add AAAA record (IPv6)
+                if ($updateV6) {
+                    if (isset($this->ipv6)) {
+                        $this->dnsRecordList[] = new DnsRecordEntity(
+                            '',
+                            'AAAA',
+                            $hostname,
+                            $this->ipv6,
+                            $zoneId,
+                            '',
+                            ''
+                        );
+                    } elseif ($this->ipv6Error) {
+                        // IPv6 was requested but failed to obtain
+                        $this->exitWithSynologyMsg(SynologyOutput::DDNS_FAILED . " - IPv6 Error: " . $this->ipv6Error);
+                    }
                 }
             }
 
@@ -415,20 +499,75 @@ class SynologyCloudflareDDNSAgent
     }
 
     /**
-     * Extracts valid hostnames from a given string of hostnames separated by pipes (|).
+     * Extracts valid hostnames and their options from a given string.
+     *
+     * Format: domain1.com|domain2.com,v4|domain3.com,v6|cn
+     * Options:
+     *   (none) - Update both A (IPv4) and AAAA (IPv6)
+     *   ,v4    - Update A record only (IPv4)
+     *   ,v6    - Update AAAA record only (IPv6)
+     *   |cn    - (at end) Use China API for IPv6 (not included in hostList)
+     *   |https://...,field - (at end) Custom IPv6 API (not included in hostList)
      *
      * @param string $hostnames A string of hostnames separated by pipes (|).
-     * @return array An array of validated and parsed hostnames.
+     * @return array An array of hostname entries with options.
      */
     private function extractHostnames($hostnames)
     {
         $arHost = preg_split('/\|/', $hostnames, -1, PREG_SPLIT_NO_EMPTY);
         $hostList = [];
+        
         foreach ($arHost as $value) {
-            if ($this->isValidHostname($value)) {
-                $hostList[] = $value;
+            $trimmedValue = trim($value);
+            
+            // Skip 'cn' flag or custom URL at the end
+            if (strtolower($trimmedValue) === 'cn') {
+                continue;
             }
+            if (preg_match('/^https?:\/\/.+,.+$/', $trimmedValue)) {
+                continue;
+            }
+
+            $parts = explode(',', $value, 2);
+            $hostname = trim($parts[0]);
+            $option = isset($parts[1]) ? strtolower(trim($parts[1])) : '';
+
+            if (!$this->isValidHostname($hostname)) {
+                continue;
+            }
+
+            // Parse options
+            $updateV4 = true;
+            $updateV6 = true;
+
+            switch ($option) {
+                case '':
+                    // Default: v4 + v6
+                    $updateV4 = true;
+                    $updateV6 = true;
+                    break;
+                case 'v4':
+                    // v4 only
+                    $updateV4 = true;
+                    $updateV6 = false;
+                    break;
+                case 'v6':
+                    // v6 only
+                    $updateV4 = false;
+                    $updateV6 = true;
+                    break;
+                default:
+                    // Unknown option, use default behavior
+                    break;
+            }
+
+            $hostList[] = [
+                'hostname' => $hostname,
+                'updateV4' => $updateV4,
+                'updateV6' => $updateV6
+            ];
         }
+        
         return $hostList;
     }
 
