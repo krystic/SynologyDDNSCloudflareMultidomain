@@ -147,7 +147,7 @@ For assistance with vi commands, see:
 	Add/Update the DDNS settings screen as follows:
 
 	* Service provider: Select Cloudflare
-    * 🆕Hostname: this field is not used anymore, you can put any value here
+  * 🆕Hostname: this field is not used anymore, you can put any value here
 	* Username:
 For a single domain: __mydomain.com__
 For multiple domains with options: __subdomain.mydomain.com|vpn.mydomain.com,v4|test.mydomain.com,v6|cn__
@@ -176,9 +176,9 @@ For multiple domains with options: __subdomain.mydomain.com|vpn.mydomain.com,v4|
         __Note: there is a 256-character limit on Hostname input__
 	* Password: Your created Cloudflare API Key
 
-	![image](https://github.com/krystic/SynologyDDNSCloudflareMultidomain/blob/master/docs/example3.png)
+![image](https://github.com/krystic/SynologyDDNSCloudflareMultidomain/blob/master/docs/example3.png)
 
-	Finally, press the test connection button to confirm all information is correctly entered, before pressing Ok to save and confirm your details.
+Finally, press the test connection button to confirm all information is correctly entered, before pressing Ok to save and confirm your details.
 
 4. You're done!
 
