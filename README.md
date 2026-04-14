@@ -144,43 +144,44 @@ For assistance with vi commands, see:
 	 
 	 b. *For SRM users:* Navigate to __Network Centre > Internet > QuickConnect & DDNS > DDNS__ and press the Add button:
 
-	Add/Update the DDNS settings screen as follows:
+Add/Update the DDNS settings screen as follows:
 
-	* Service provider: Select Cloudflare
-  * 🆕Hostname: this field is not used anymore, you can put any value here
-	* Username:
+* Service provider: Select Cloudflare
+* 🆕Hostname: this field is not used anymore, you can put any value here
+* Username:
+  
 For a single domain: __mydomain.com__
 For multiple domains with options: __subdomain.mydomain.com|vpn.mydomain.com,v4|test.mydomain.com,v6|cn__
-	  🆕(ensure each domain is separated: `|`)🆕
+  🆕(ensure each domain is separated: `|`)🆕
 
-	**Domain Options:**
-	| Option | Description |
-	|--------|-------------|
-	| (none) | Update both A (IPv4) and AAAA (IPv6) |
-	| `,v4` | Update A record only (IPv4) |
-	| `,v6` | Update AAAA record only (IPv6) |
+**Domain Options:**
+| Option | Description |
+|--------|-------------|
+| (none) | Update both A (IPv4) and AAAA (IPv6) |
+| `,v4` | Update A record only (IPv4) |
+| `,v6` | Update AAAA record only (IPv6) |
 
-	**IPv6 API Options (at end):**
-	| Option | Description |
-	|--------|-------------|
-	| (none) | Use ipify.org for IPv6 detection |
-	| `\|cn` | Use China-accessible API for IPv6 detection |
-	| `\|https://api.example.com/ip,fieldname` | Use custom API, `fieldname` is the JSON key containing IPv6 |
+**IPv6 API Options (at end):**
+| Option | Description |
+|--------|-------------|
+| (none) | Use ipify.org for IPv6 detection |
+| `\|cn` | Use China-accessible API for IPv6 detection |
+| `\|https://api.example.com/ip,fieldname` | Use custom API, `fieldname` is the JSON key containing IPv6 |
 
-	**Examples:**
-	- `nas.example.com` - Update A + AAAA, IPv6 via ipify
-	- `nas.example.com|cn` - Update A + AAAA, IPv6 via China API
-	- `nas.example.com,v4|vpn.example.com,v6|cn` - nas: A only, vpn: AAAA only (China API)
-	- `nas.example.com|https://v6.ip.zxinc.org/info.php?type=json,data.myip` - Custom IPv6 API
-    
-        __Note: there is a 256-character limit on Hostname input__
-	* Password: Your created Cloudflare API Key
+**Examples:**
+- `nas.example.com` - Update A + AAAA, IPv6 via ipify
+- `nas.example.com|cn` - Update A + AAAA, IPv6 via China API
+- `nas.example.com,v4|vpn.example.com,v6|cn` - nas: A only, vpn: AAAA only (China API)
+- `nas.example.com|https://v6.ip.zxinc.org/info.php?type=json,data.myip` - Custom IPv6 API
+  
+      __Note: there is a 256-character limit on Hostname input__
+* Password: Your created Cloudflare API Key
 
 ![image](https://github.com/krystic/SynologyDDNSCloudflareMultidomain/blob/master/docs/example3.png)
 
 Finally, press the test connection button to confirm all information is correctly entered, before pressing Ok to save and confirm your details.
 
-4. You're done!
+1. You're done!
 
 ## Troubleshooting and known issues
 
