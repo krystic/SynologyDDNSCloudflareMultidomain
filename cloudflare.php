@@ -177,7 +177,10 @@ class IPv6Resolver
         
         $options = [
             CURLOPT_URL => $url,
-            CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
+            CURLOPT_HTTPHEADER => [
+                "Content-Type: application/json",
+                "User-Agent: curl/7.79.1"
+            ],
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER => false,
             CURLOPT_VERBOSE => false,
