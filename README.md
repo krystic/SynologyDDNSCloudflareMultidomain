@@ -22,6 +22,7 @@
     - [Method 1: via Task Scheduler (Recommended - No SSH required)](#method-1-via-task-scheduler-recommended---no-ssh-required)
     - [Method 2: via SSH](#method-2-via-ssh)
     - [Configure DDNS (Required for both methods)](#configure-ddns-required-for-both-methods)
+    - [You're done!](#youre-done)
   - [Troubleshooting and known issues](#troubleshooting-and-known-issues)
     - [Cloudflare API free domains limitation](#cloudflare-api-free-domains-limitation)
     - [Connection test failed or error returned](#connection-test-failed-or-error-returned)
@@ -73,18 +74,18 @@ Before starting the installation process, make sure you have (and know) the foll
 	(Note: Having Proxied turned on for your A records isn't necessary, but it will prevent those snooping around from easily finding out your current IP address)
 
 	![image](https://github.com/krystic/SynologyDDNSCloudflareMultidomain/blob/master/docs/example1.png)
-	
-3. *SSH access to your Synology device:*
+    
+  3. *SSH access to your Synology device:*
 
-If you haven't setup this access, see the following Synology Knowledge Base article:
-[How can I sign in to DSM/SRM with root privilege via SSH?](https://kb.synology.com/en-id/DSM/tutorial/How_to_login_to_DSM_with_root_permission_via_SSH_Telnet)
+  If you haven't setup this access, see the following Synology Knowledge Base article:
+  [How can I sign in to DSM/SRM with root privilege via SSH?](https://kb.synology.com/en-id/DSM/tutorial/How_to_login_to_DSM_with_root_permission_via_SSH_Telnet)
 
-4. *SRM users: Knowledge of vi:*
+  4. *SRM users: Knowledge of vi:*
 
-vi is the only text editor available within the [Busybox](https://linux.die.net/man/1/busybox) environment available at the SSH command line on devices running SRM.
+  vi is the only text editor available within the [Busybox](https://linux.die.net/man/1/busybox) environment available at the SSH command line on devices running SRM.
 
-For assistance with vi commands, see:
-[Basic vi commands](https://www.cs.colostate.edu/helpdocs/vi.html)
+  For assistance with vi commands, see:
+  [Basic vi commands](https://www.cs.colostate.edu/helpdocs/vi.html)
 
 
 ## How to install
@@ -138,50 +139,50 @@ For assistance with vi commands, see:
 
 ### Configure DDNS (Required for both methods)
 
-**Update your DDNS settings:** 
+  **Update your DDNS settings:** 
 
-	 a. *For DSM Users:* Navigate to __Control Panel > External Access > DDNS__ then add new DDNS
-	 
-	 b. *For SRM users:* Navigate to __Network Centre > Internet > QuickConnect & DDNS > DDNS__ and press the Add button:
+    a. *For DSM Users:* Navigate to __Control Panel > External Access > DDNS__ then add new DDNS
+    
+    b. *For SRM users:* Navigate to __Network Centre > Internet > QuickConnect & DDNS > DDNS__ and press the Add button:
 
-Add/Update the DDNS settings screen as follows:
+  Add/Update the DDNS settings screen as follows:
 
-* Service provider: Select Cloudflare
-* 🆕Hostname: this field is not used anymore, you can put any value here
-* Username:
-  
-For a single domain: __mydomain.com__
-For multiple domains with options: __subdomain.mydomain.com|vpn.mydomain.com,v4|test.mydomain.com,v6|cn__
-  🆕(ensure each domain is separated: `|`)🆕
+  * Service provider: Select Cloudflare
+  * 🆕Hostname: this field is not used anymore, you can put any value here
+  * Username:
+    
+  For a single domain: __mydomain.com__
+  For multiple domains with options: __subdomain.mydomain.com|vpn.mydomain.com,v4|test.mydomain.com,v6|cn__
+    🆕(ensure each domain is separated: `|`)🆕
 
-**Domain Options:**
-| Option | Description |
-|--------|-------------|
-| (none) | Update both A (IPv4) and AAAA (IPv6) |
-| `,v4` | Update A record only (IPv4) |
-| `,v6` | Update AAAA record only (IPv6) |
+  **Domain Options:**
+  | Option | Description |
+  |--------|-------------|
+  | (none) | Update both A (IPv4) and AAAA (IPv6) |
+  | `,v4` | Update A record only (IPv4) |
+  | `,v6` | Update AAAA record only (IPv6) |
 
-**IPv6 API Options (at end):**
-| Option | Description |
-|--------|-------------|
-| (none) | Use ipify.org for IPv6 detection |
-| `\|cn` | Use China-accessible API for IPv6 detection |
-| `\|https://api.example.com/ip,fieldname` | Use custom API, `fieldname` is the JSON key containing IPv6 |
+  **IPv6 API Options (at end):**
+  | Option | Description |
+  |--------|-------------|
+  | (none) | Use ipify.org for IPv6 detection |
+  | `\|cn` | Use China-accessible API for IPv6 detection |
+  | `\|https://api.example.com/ip,fieldname` | Use custom API, `fieldname` is the JSON key containing IPv6 |
 
-**Examples:**
-- `nas.example.com` - Update A + AAAA, IPv6 via ipify
-- `nas.example.com|cn` - Update A + AAAA, IPv6 via China API
-- `nas.example.com,v4|vpn.example.com,v6|cn` - nas: A only, vpn: AAAA only (China API)
-- `nas.example.com|https://v6.ip.zxinc.org/info.php?type=json,data.myip` - Custom IPv6 API
-  
-      __Note: there is a 256-character limit on Hostname input__
-* Password: Your created Cloudflare API Key
+  **Examples:**
+  - `nas.example.com` - Update A + AAAA, IPv6 via ipify
+  - `nas.example.com|cn` - Update A + AAAA, IPv6 via China API
+  - `nas.example.com,v4|vpn.example.com,v6|cn` - nas: A only, vpn: AAAA only (China API)
+  - `nas.example.com|https://v6.ip.zxinc.org/info.php?type=json,data.myip` - Custom IPv6 API
+    
+        __Note: there is a 256-character limit on Hostname input__
+  * Password: Your created Cloudflare API Key
 
-![image](https://github.com/krystic/SynologyDDNSCloudflareMultidomain/blob/master/docs/example3.png)
+  ![image](https://github.com/krystic/SynologyDDNSCloudflareMultidomain/blob/master/docs/example3.png)
 
-Finally, press the test connection button to confirm all information is correctly entered, before pressing Ok to save and confirm your details.
+  Finally, press the test connection button to confirm all information is correctly entered, before pressing Ok to save and confirm your details.
 
-1. You're done!
+### You're done!
 
 ## Troubleshooting and known issues
 
